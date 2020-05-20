@@ -2,8 +2,14 @@ class DinoJump
   attr_gtk
 
   def initialize
+    reset_game
+  end
+
+  def reset_game
     @rock_order = [:brown, :dome, :gray, :purple, :crystal]
     @rocks = []
+    @rock_count = 0
+    @rock_limit = 10
   end
 
   def tick
@@ -49,28 +55,39 @@ class DinoJump
 
     # Rocks!
     if @rocks.empty?
+      @rock_count += 1
+
       if @rock_order.empty?
-        @rocks << Rock.new
+        @rocks << Rock.new(camera.x)
       else
-        @rocks << Rock.new(@rock_order.shift)
+        @rocks << Rock.new(camera.x, @rock_order.shift)
       end
     end
   end
 
   def tick_game
-    if player.state == :idle
+    case player.state
+    when :idle
       if inputs.keyboard.key_down.space
         player.state = :running
         player.dx = 5
         player.started_running_at = state.tick_count
       end
-    elsif player.state == :running
+    when :running
       if inputs.keyboard.key_down.space
         player.state = :jumping
         player.started_jumping_at = state.tick_count
         player.dy = 9
         @last_column = 0 # For some reason the sprite is looping back to 0?
       end
+    when :done
+      if inputs.keyboard.key_down.space
+        reset_game
+        player.state = :idle
+        player.dx = 0
+      end
+
+      return
     end
 
     player.x += player.dx
@@ -99,8 +116,10 @@ class DinoJump
       end
     end
 
-    @rocks.delete_if do |rock|
-      rock.passed?
+    @rocks.delete_if(&:passed?)
+
+    if @rock_count > @rock_limit and player.dy = 0
+      player.state = :done
     end
   end
 
@@ -117,7 +136,7 @@ class DinoJump
     render_rocks
 
     case player.state
-    when :idle
+    when :idle, :done
       outputs.sprites << idle_sprite
     when :jumping
       outputs.sprites << jumping_sprite
@@ -239,7 +258,7 @@ class DinoJump
 end
 
 class Rock
-  def initialize type = Rocks.keys.sample
+  def initialize start_x, type = Rocks.keys.sample
     template = Rocks[type]
     @path = template[:path]
     @w = template[:w]
@@ -248,6 +267,7 @@ class Rock
     @hit = false
     @x = 1290 # Offscreen
     @y = 10
+    @last_camera = start_x
   end
 
   def passed?
@@ -255,10 +275,12 @@ class Rock
   end
 
   def render camera
-    offset = camera.x % -1500
-    @x = 1290 + offset
+    # Use dx so @x will always move left
+    dx = (camera.x - @last_camera).abs
+    @last_camera = camera.x
+    @x -= dx
 
-    if @x < -(@w + 5) # Offscreen
+    if @x + @w < 0 # Offscreen
       @passed = true
     end
   end
