@@ -1,7 +1,9 @@
-class DinoJump 
+class DinoJump
   attr_gtk
 
   def initialize
+    @rock_order = [:brown, :dome, :gray, :purple, :crystal]
+    @rocks = []
   end
 
   def tick
@@ -13,7 +15,7 @@ class DinoJump
   end
 
   def setup_camera
-    state.camera.x ||= 0 
+    state.camera.x ||= 0
   end
 
   def setup_player
@@ -22,6 +24,7 @@ class DinoJump
     state.player.dx ||= 0
     state.player.dy ||= 0
     state.player.state ||= :idle
+    state.player.points ||= 0
   end
 
   def camera
@@ -34,10 +37,24 @@ class DinoJump
 
   def setup_world
     if player.state == :idle
+      # Show initial message
       outputs.labels << [grid.center_x - 125, grid.h - 100, "GO!", 30]
+    else
+      # Points
+      outputs.labels << [grid.center_x - 125, grid.h - 100, player.points, 30]
     end
+
     # Background
     outputs.solids << [*grid.rect, 0, 43, 68, 155]
+
+    # Rocks!
+    if @rocks.empty?
+      if @rock_order.empty?
+        @rocks << Rock.new
+      else
+        @rocks << Rock.new(@rock_order.shift)
+      end
+    end
   end
 
   def tick_game
@@ -74,10 +91,30 @@ class DinoJump
     else
       player.dy = 0
     end
+
+    @rocks.each do |rock|
+      if not rock.already_hit? and rock.hit? feet_box
+        rock.hit!
+        player.points += 1
+      end
+    end
+
+    @rocks.delete_if do |rock|
+      rock.passed?
+    end
+  end
+
+  def feet_box
+    {
+      x: player.x + camera.x + 120,
+      y: player.y + 30,
+      h: 30,
+      w: 50
+    }
   end
 
   def render
-    rock
+    render_rocks
 
     case player.state
     when :idle
@@ -91,16 +128,23 @@ class DinoJump
     grass
   end
 
+  def render_rocks
+    @rocks.each do |rock|
+      rock.render camera
+      outputs.sprites << rock.sprite
+    end
+  end
+
   def running_sprite
     column = player.started_running_at.frame_index(8, 6, true)
 
-    sprite(column, 'sprites/dino_run.png')
+    dino_sprite(column, 'sprites/dino_run.png')
   end
 
   def idle_sprite
     column = 0.frame_index(9, 8, true)
 
-    sprite(column, 'sprites/dino_idle.png')
+    dino_sprite(column, 'sprites/dino_idle.png')
   end
 
   def jumping_sprite
@@ -114,10 +158,10 @@ class DinoJump
 
     @last_column = column
 
-    sprite(column, 'sprites/dino_jump.png')
+    dino_sprite(column, 'sprites/dino_jump.png')
   end
 
-  def sprite column, path
+  def dino_sprite column, path
     {
       x: grid.center_x - 640,
       y: player.y + 10,
@@ -131,13 +175,23 @@ class DinoJump
     }
   end
 
-  def rock
+  def rock_sprite
     outputs.sprites << {
       x: 1290 + (camera.x % -1500),
       y: 10,
       w: 147,
       h: 122,
       path: 'sprites/rock.png'
+    }
+  end
+
+  def rock2
+    outputs.sprites << {
+      x: 1290 + (camera.x % -1500),
+      y: 10,
+      w: 250 / 2,
+      h: 200 / 2,
+      path: 'sprites/rock2.png'
     }
   end
 
@@ -182,6 +236,91 @@ class DinoJump
         path:  'sprites/grass.png'
       }
   end
+end
+
+class Rock
+  def initialize type = Rocks.keys.sample
+    template = Rocks[type]
+    @path = template[:path]
+    @w = template[:w]
+    @h = template[:h]
+    @passed = false
+    @hit = false
+    @x = 1290 # Offscreen
+    @y = 10
+  end
+
+  def passed?
+    @passed
+  end
+
+  def render camera
+    offset = camera.x % -1500
+    @x = 1290 + offset
+
+    if @x < -(@w + 5) # Offscreen
+      @passed = true
+    end
+  end
+
+  def sprite
+    {
+      x: @x,
+      y: @y,
+      w: @w,
+      h: @h,
+      path: @path
+    }
+  end
+
+  def point_box
+    {
+      x: @x + (@w / 2),
+      y: @y + @h + 100,
+      h: 200,
+      w: 10
+    }
+  end
+
+  def already_hit?
+    @hit
+  end
+
+  def hit!
+    @hit = true
+  end
+
+  def hit? hit_box
+    hit_box.intersect_rect? self.point_box
+  end
+
+  Rocks = {
+    gray: {
+      w: 147,
+      h: 122,
+      path: 'sprites/rock.png'
+    },
+    dome: {
+      w: 125,
+      h: 100,
+      path: 'sprites/rock2.png'
+    },
+    brown: {
+      w: 109,
+      h: 75,
+      path: 'sprites/rock3.png'
+    },
+    purple: {
+      w: 155,
+      h: 125,
+      path: 'sprites/rock4.png'
+    },
+    crystal: {
+      w: 160,
+      h: 152,
+      path: 'sprites/crystal.png'
+    }
+  }
 end
 
 
