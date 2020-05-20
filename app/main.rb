@@ -85,6 +85,7 @@ class DinoJump
         reset_game
         player.state = :idle
         player.dx = 0
+        player.points = 0
       end
 
       return
