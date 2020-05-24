@@ -1,3 +1,5 @@
+# Sound effects obtained from https://www.zapsplat.com
+
 class DinoJump
   attr_gtk
 
@@ -78,6 +80,7 @@ class DinoJump
         player.state = :jumping
         player.started_jumping_at = state.tick_count
         player.dy = 9
+        outputs.sounds << "sounds/jump.wav"
         @last_column = 0 # For some reason the sprite is looping back to 0?
       end
     when :done
