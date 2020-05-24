@@ -65,6 +65,8 @@ class DinoJump
         @rocks << Rock.new(camera.x, @rock_order.shift)
       end
     end
+
+    outputs.sounds << 'sounds/audio_hero_Show-And-Tell_SIPML_Q-0149.ogg'
   end
 
   def tick_game
