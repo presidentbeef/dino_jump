@@ -70,6 +70,10 @@ class DinoJump
   end
 
   def tick_game
+    if inputs.keyboard.escape
+      exit
+    end
+
     case player.state
     when :idle
       if inputs.keyboard.key_down.space
