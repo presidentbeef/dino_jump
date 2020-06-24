@@ -3,7 +3,9 @@
 class DinoJump
   attr_gtk
 
-  def initialize
+  def initialize args
+    self.args = args
+
     reset_game
   end
 
@@ -353,7 +355,6 @@ end
 
 
 def tick args
-  $game ||= DinoJump.new
-  $game.args = args
+  $game ||= DinoJump.new(args)
   $game.tick
 end
