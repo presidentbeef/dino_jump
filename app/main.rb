@@ -6,6 +6,9 @@ class DinoJump
   def initialize args
     self.args = args
 
+    # Background
+    outputs.static_solids << [*grid.rect, 0, 43, 68, 155]
+
     reset_game
   end
 
@@ -53,9 +56,6 @@ class DinoJump
       # Points
       outputs.labels << [grid.center_x - 125, grid.h - 100, player.points, 30]
     end
-
-    # Background
-    outputs.solids << [*grid.rect, 0, 43, 68, 155]
 
     # Rocks!
     if @rocks.empty?
