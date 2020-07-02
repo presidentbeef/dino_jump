@@ -74,13 +74,13 @@ class DinoJump
   def tick_game
     case player.state
     when :idle
-      if inputs.keyboard.key_down.space
+      if inputs.keyboard.key_down.space or inputs.mouse.click
         player.state = :running
         player.dx = 5
         player.started_running_at = state.tick_count
       end
     when :running
-      if inputs.keyboard.key_down.space
+      if inputs.keyboard.key_down.space or inputs.mouse.click
         player.state = :jumping
         player.started_jumping_at = state.tick_count
         player.dy = 9
@@ -88,7 +88,7 @@ class DinoJump
         @last_column = 0 # For some reason the sprite is looping back to 0?
       end
     when :done
-      if inputs.keyboard.key_down.space
+      if inputs.keyboard.key_down.space or inputs.mouse.click
         reset_game
         player.state = :idle
         player.dx = 0
