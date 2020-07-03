@@ -11,6 +11,7 @@ class DinoJump
     # Background
     outputs.static_solids << [*grid.rect, 0, 43, 68, 155]
 
+    state.camera.x = 0
     reset_game
   end
 
@@ -22,14 +23,9 @@ class DinoJump
   end
 
   def tick
-    setup_camera
     setup_world
     tick_game
     render
-  end
-
-  def setup_camera
-    state.camera.x ||= 0
   end
 
   def camera
