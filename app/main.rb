@@ -113,26 +113,6 @@ class DinoJump
     end
   end
 
-  def rock_sprite
-    outputs.sprites << {
-      x: 1290 + (camera.x % -1500),
-      y: 10,
-      w: 147,
-      h: 122,
-      path: 'sprites/rock.png'
-    }
-  end
-
-  def rock2
-    outputs.sprites << {
-      x: 1290 + (camera.x % -1500),
-      y: 10,
-      w: 250 / 2,
-      h: 200 / 2,
-      path: 'sprites/rock2.png'
-    }
-  end
-
   def grass
     width = 769
 
