@@ -13,6 +13,7 @@ class DinoJump
 
     # Background
     outputs.static_solids << [*grid.rect, 0, 43, 68, 155]
+    outputs.sounds << 'sounds/audio_hero_Show-And-Tell_SIPML_Q-0149.ogg'
     reset_game
   end
 
@@ -53,7 +54,6 @@ class DinoJump
       end
     end
 
-    outputs.sounds << 'sounds/audio_hero_Show-And-Tell_SIPML_Q-0149.ogg'
   end
 
   def tick_game
