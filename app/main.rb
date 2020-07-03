@@ -37,10 +37,10 @@ class DinoJump
   def setup_world
     if dino.state == :idle
       # Show initial message
-      outputs.labels << [grid.center_x - 125, grid.h - 100, "GO!", 30]
+      outputs.labels << [grid.center_x - 85, grid.h - 50, "GO!", 45]
     else
       # Points
-      outputs.labels << [grid.center_x - 125, grid.h - 100, dino.points, 30]
+      outputs.labels << [grid.center_x - 55, grid.h - 50, dino.points, 45]
     end
 
     # Rocks!
