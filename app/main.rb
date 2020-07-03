@@ -2,9 +2,11 @@
 
 class DinoJump
   attr_gtk
+  attr_reader :player
 
   def initialize args
     self.args = args
+    @player = Dino.new(args)
 
     # Background
     outputs.static_solids << [*grid.rect, 0, 43, 68, 155]
@@ -21,7 +23,6 @@ class DinoJump
 
   def tick
     setup_camera
-    setup_player
     setup_world
     tick_game
     render
@@ -31,21 +32,8 @@ class DinoJump
     state.camera.x ||= 0
   end
 
-  def setup_player
-    state.player.x ||= 1
-    state.player.y ||= 1
-    state.player.dx ||= 0
-    state.player.dy ||= 0
-    state.player.state ||= :idle
-    state.player.points ||= 0
-  end
-
   def camera
     state.camera
-  end
-
-  def player
-    state.player
   end
 
   def setup_world
@@ -79,50 +67,28 @@ class DinoJump
     case player.state
     when :idle
       if inputs.keyboard.key_down.space or inputs.mouse.click
-        player.state = :running
-        player.dx = 5
-        player.started_running_at = state.tick_count
+        player.run
       end
     when :running
       if inputs.keyboard.key_down.space or inputs.mouse.click
-        player.state = :jumping
-        player.started_jumping_at = state.tick_count
-        player.dy = 9
+        player.jump
         outputs.sounds << "sounds/jump.wav"
         @last_column = 0 # For some reason the sprite is looping back to 0?
       end
     when :done
       if inputs.keyboard.key_down.space or inputs.mouse.click
         reset_game
-        player.state = :idle
-        player.dx = 0
-        player.points = 0
+        player.idle
       end
 
       return
     end
 
-    player.x += player.dx
-    player.y += player.dy
+    player.move 
     camera.x -= player.dx
 
-    if player.state == :jumping
-      if player.y >= 270
-        player.dy = -1 # Fall slower at first
-      elsif player.y >= 180 and player.dy < 1
-        player.dy = -6
-      elsif player.y <= 2
-        player.dy = 0
-        player.y = 1
-        player.state = :running
-        player.started_running_at = state.tick_count
-      end
-    else
-      player.dy = 0
-    end
-
     @rocks.each do |rock|
-      if not rock.already_hit? and rock.hit? feet_box
+      if not rock.already_hit? and rock.hit? player.feet_box
         rock.hit!
         player.points += 1
       end
@@ -131,17 +97,8 @@ class DinoJump
     @rocks.delete_if(&:passed?)
 
     if @rock_count > @rock_limit and player.dy = 0
-      player.state = :done
+      player.done
     end
-  end
-
-  def feet_box
-    {
-      x: player.x + camera.x + 120,
-      y: player.y + 30,
-      h: 30,
-      w: 50
-    }
   end
 
   def render
@@ -268,6 +225,87 @@ class DinoJump
       }
   end
 end
+
+class Dino
+  attr_accessor :x, :y, :dx, :dy, :state, :points
+  attr_accessor :started_running_at, :started_jumping_at
+
+  def initialize args
+    @args = args
+
+    @x = 1
+    @y = 1
+    @dx = 0
+    @dy = 0
+    @state = :idle
+    @points = 0
+    @feetbox = { h: 30, w: 50 }
+    @started_running_at = nil
+    @started_jumping_at = nil
+  end
+
+  def jump
+    @state = :jumping
+    @started_jumping_at = tick_count 
+    @dy = 9
+  end
+
+  def run
+    @state = :running
+    @dx = 5
+    @started_running_at = tick_count
+  end
+
+  def move
+    @x += @dx
+    @y += @dy
+
+    if @state == :jumping
+      if @y >= 270
+        @dy = -1 # Fall slower at first
+      elsif @y >= 180 and @dy < 1
+        @dy = -6
+      elsif @y <= 2
+        @dy = 0
+        @y = 1
+        @state = :running
+        @started_running_at = tick_count
+      end
+    else
+      @dy = 0
+    end
+  end
+
+  def idle
+    @state = :idle
+    @dx = 0
+    @points = 0
+  end
+
+  def done
+    @state = :done
+  end
+
+  def feet_box
+    @feetbox[:x] = @x + camera.x + 120
+    @feetbox[:y] = @y + 30
+    @feetbox
+  end
+
+  private
+
+  def make_sprite path
+  end
+
+  def camera
+    @args.state.camera
+  end
+
+  def tick_count
+    @args.state.tick_count
+  end
+end
+
 
 class Rock
   def initialize start_x, type = Rocks.keys.sample
