@@ -87,6 +87,7 @@ class DinoJump
       if not rock.already_hit? and rock.hit? dino.feet_box
         rock.hit!
         dino.points += 1
+        outputs.sounds << 'sounds/bell.wav'
       end
     end
 
