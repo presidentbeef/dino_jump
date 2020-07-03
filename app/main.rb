@@ -3,7 +3,12 @@
 class DinoJump
   attr_gtk
 
-  def initialize
+  def initialize args
+    self.args = args
+
+    # Background
+    outputs.static_solids << [*grid.rect, 0, 43, 68, 155]
+
     reset_game
   end
 
@@ -52,9 +57,6 @@ class DinoJump
       outputs.labels << [grid.center_x - 125, grid.h - 100, player.points, 30]
     end
 
-    # Background
-    outputs.solids << [*grid.rect, 0, 43, 68, 155]
-
     # Rocks!
     if @rocks.empty?
       @rock_count += 1
@@ -76,13 +78,13 @@ class DinoJump
 
     case player.state
     when :idle
-      if inputs.keyboard.key_down.space
+      if inputs.keyboard.key_down.space or inputs.mouse.click
         player.state = :running
         player.dx = 5
         player.started_running_at = state.tick_count
       end
     when :running
-      if inputs.keyboard.key_down.space
+      if inputs.keyboard.key_down.space or inputs.mouse.click
         player.state = :jumping
         player.started_jumping_at = state.tick_count
         player.dy = 9
@@ -90,7 +92,7 @@ class DinoJump
         @last_column = 0 # For some reason the sprite is looping back to 0?
       end
     when :done
-      if inputs.keyboard.key_down.space
+      if inputs.keyboard.key_down.space or inputs.mouse.click
         reset_game
         player.state = :idle
         player.dx = 0
@@ -357,7 +359,6 @@ end
 
 
 def tick args
-  $game ||= DinoJump.new
-  $game.args = args
+  $game ||= DinoJump.new(args)
   $game.tick
 end
