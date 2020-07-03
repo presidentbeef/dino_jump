@@ -104,8 +104,7 @@ class DinoJump
 
   def render_rocks
     @rocks.each do |rock|
-      rock.render camera
-      outputs.sprites << rock.sprite
+      outputs.sprites << rock.render(camera)
     end
   end
 
@@ -301,6 +300,21 @@ class Rock
     @x = 1290 # Offscreen
     @y = 10
     @last_camera = start_x
+
+    @sprite = {
+      x: @x,
+      y: @y,
+      w: @w,
+      h: @h,
+      path: @path
+    }
+
+    @point_box = {
+      x: @x + (@w / 2),
+      y: @y + @h + 100,
+      h: 200,
+      w: 10
+    }
   end
 
   def passed?
@@ -316,25 +330,18 @@ class Rock
     if @x + @w < 0 # Offscreen
       @passed = true
     end
+
+    update_sprite
   end
 
-  def sprite
-    {
-      x: @x,
-      y: @y,
-      w: @w,
-      h: @h,
-      path: @path
-    }
+  def update_sprite
+    @sprite[:x] = @x
+    @sprite
   end
 
   def point_box
-    {
-      x: @x + (@w / 2),
-      y: @y + @h + 100,
-      h: 200,
-      w: 10
-    }
+    @point_box[:x] = @x + (@w / 2)
+    @point_box
   end
 
   def already_hit?
