@@ -6,12 +6,13 @@ class DinoJump
 
   def initialize args
     self.args = args
+    state.camera.x = 0
+
     @dino = Dino.new(args)
+    @grass = Grass.new(args)
 
     # Background
     outputs.static_solids << [*grid.rect, 0, 43, 68, 155]
-
-    state.camera.x = 0
     reset_game
   end
 
@@ -99,55 +100,13 @@ class DinoJump
   def render
     render_rocks
     outputs.sprites << dino.sprite
-    grass
+    outputs.sprites << @grass.render
   end
 
   def render_rocks
     @rocks.each do |rock|
       outputs.sprites << rock.render(camera)
     end
-  end
-
-  def grass
-    width = 769
-
-    x = camera.x % -700
-
-    outputs.sprites << {
-        x: x - 60,
-        y: 0,
-        w: width,
-        h: 90,
-        tile_x: 0,
-        tile_y: 0,
-        tile_w: 769,
-        tile_h: 200,
-        path:  'sprites/grass.png'
-      }
-
-    outputs.sprites << {
-        x: x + 640,
-        y: 0,
-        w: width,
-        h: 90,
-        tile_x: 0,
-        tile_y: 0,
-        tile_w: 769,
-        tile_h: 200,
-        path:  'sprites/grass.png'
-      }
-
-    outputs.sprites << {
-        x: x + 1340,
-        y: 0,
-        w: width,
-        h: 90,
-        tile_x: 0,
-        tile_y: 0,
-        tile_w: 769,
-        tile_h: 200,
-        path:  'sprites/grass.png'
-      }
   end
 end
 
@@ -383,6 +342,64 @@ class Rock
       path: 'sprites/crystal.png'
     }
   }
+end
+
+class Grass
+  def initialize args
+    @args = args
+
+    x = @args.state.camera.x % -700
+    width = 769
+
+    @grass =[
+      {
+        x: x - 60,
+        y: 0,
+        w: width,
+        h: 90,
+        tile_x: 0,
+        tile_y: 0,
+        tile_w: 769,
+        tile_h: 200,
+        path:  'sprites/grass.png',
+        offset: -60
+      },
+      {
+        x: x + 640,
+        y: 0,
+        w: width,
+        h: 90,
+        tile_x: 0,
+        tile_y: 0,
+        tile_w: 769,
+        tile_h: 200,
+        path:  'sprites/grass.png',
+        offset: 640
+      },
+      {
+        x: x + 1340,
+        y: 0,
+        w: width,
+        h: 90,
+        tile_x: 0,
+        tile_y: 0,
+        tile_w: 769,
+        tile_h: 200,
+        path:  'sprites/grass.png',
+        offset: 1340
+      }
+    ]
+  end
+
+  def render
+    x = @args.state.camera.x % -700
+
+    @grass.each do |grass|
+      grass[:x] = x + grass[:offset]
+    end
+
+    @grass
+  end
 end
 
 
