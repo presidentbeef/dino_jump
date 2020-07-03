@@ -92,7 +92,7 @@ class DinoJump
 
     @rocks.delete_if(&:passed?)
 
-    if @rock_count > @rock_limit and dino.dy = 0
+    if @rock_count > @rock_limit and dino.dy == 0
       dino.done
     end
   end
@@ -148,19 +148,18 @@ class Dino
     @x += @dx
     @y += @dy
 
-    if @state == :jumping
-      if @y >= 270
-        @dy = -1 # Fall slower at first
-      elsif @y >= 180 and @dy < 1
-        @dy = -6
-      elsif @y <= 2
-        @dy = 0
-        @y = 1
+    if @y >= 270
+      @dy = -1 # Fall slower at first
+    elsif @y >= 180 and @dy < 1
+      @dy = -6
+    elsif @y <= 2
+      @dy = 0
+      @y = 1
+
+      if @state == :jumping
         @state = :running
         @started_running_at = tick_count
       end
-    else
-      @dy = 0
     end
   end
 
