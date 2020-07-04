@@ -60,6 +60,16 @@ class DinoJump
       exit
     end
 
+    if inputs.mouse.click
+      if inputs.mouse.click.point.inside_rect? dino.sprite.rect
+        dino.rotate_color
+
+        if dino.state == :idle
+          return
+        end
+      end
+    end
+
     case dino.state
     when :idle
       if inputs.keyboard.key_down.space or inputs.mouse.click
@@ -126,9 +136,12 @@ class Dino
     @started_running_at = nil
     @started_jumping_at = nil
 
-    @running_sprite = make_sprite('sprites/dino_run.png')
-    @jumping_sprite = make_sprite('sprites/dino_jump.png')
-    @idle_sprite = make_sprite('sprites/dino_idle.png')
+    @colors = [:purple, :red, :orange, :blue, :green]
+    @color = :green
+
+    @running_sprite = make_sprite("sprites/dino_run_#{@color}.png")
+    @jumping_sprite = make_sprite("sprites/dino_jump_#{@color}.png")
+    @idle_sprite = make_sprite("sprites/dino_idle_#{@color}.png")
   end
 
   def jump
@@ -190,6 +203,16 @@ class Dino
     end
   end
 
+  def color= color
+    @color = color
+    update_color
+  end
+
+  def rotate_color
+    color_index = (@colors.index(@color) + 1) % @colors.length
+    self.color = @colors[color_index]
+  end
+
   private
 
   def idle_sprite
@@ -235,6 +258,12 @@ class Dino
     sprite[:tile_x] = column * 680
     sprite[:y] = @y + 10
     sprite
+  end
+
+  def update_color
+    @running_sprite[:path] = "sprites/dino_run_#{@color}.png"
+    @jumping_sprite[:path] = "sprites/dino_jump_#{@color}.png"
+    @idle_sprite[:path] = "sprites/dino_idle_#{@color}.png"
   end
 
   def camera
