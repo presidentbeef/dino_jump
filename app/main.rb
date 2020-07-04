@@ -2,13 +2,18 @@
 
 class DinoJump
   attr_gtk
+  attr_reader :dino
 
   def initialize args
     self.args = args
+    state.camera.x = 0
+
+    @dino = Dino.new(args)
+    @grass = Grass.new(args)
 
     # Background
     outputs.static_solids << [*grid.rect, 0, 43, 68, 155]
-
+    outputs.sounds << 'sounds/audio_hero_Show-And-Tell_SIPML_Q-0149.ogg'
     reset_game
   end
 
@@ -20,41 +25,22 @@ class DinoJump
   end
 
   def tick
-    setup_camera
-    setup_player
     setup_world
     tick_game
     render
-  end
-
-  def setup_camera
-    state.camera.x ||= 0
-  end
-
-  def setup_player
-    state.player.x ||= 1
-    state.player.y ||= 1
-    state.player.dx ||= 0
-    state.player.dy ||= 0
-    state.player.state ||= :idle
-    state.player.points ||= 0
   end
 
   def camera
     state.camera
   end
 
-  def player
-    state.player
-  end
-
   def setup_world
-    if player.state == :idle
+    if dino.state == :idle
       # Show initial message
-      outputs.labels << [grid.center_x - 125, grid.h - 100, "GO!", 30]
+      outputs.labels << [grid.center_x - 85, grid.h - 50, "GO!", 45]
     else
       # Points
-      outputs.labels << [grid.center_x - 125, grid.h - 100, player.points, 30]
+      outputs.labels << [grid.center_x - 55, grid.h - 50, dino.points, 45]
     end
 
     # Rocks!
@@ -68,116 +54,160 @@ class DinoJump
       end
     end
 
-    outputs.sounds << 'sounds/audio_hero_Show-And-Tell_SIPML_Q-0149.ogg'
   end
 
   def tick_game
-    case player.state
+    if inputs.keyboard.escape
+      exit
+    end
+
+    case dino.state
     when :idle
-      if inputs.keyboard.key_down.space
-        player.state = :running
-        player.dx = 5
-        player.started_running_at = state.tick_count
+      if inputs.keyboard.key_down.space or inputs.mouse.click
+        dino.run
       end
     when :running
-      if inputs.keyboard.key_down.space
-        player.state = :jumping
-        player.started_jumping_at = state.tick_count
-        player.dy = 9
+      if inputs.keyboard.key_down.space or inputs.mouse.click
+        dino.jump
         outputs.sounds << "sounds/jump.wav"
-        @last_column = 0 # For some reason the sprite is looping back to 0?
       end
     when :done
-      if inputs.keyboard.key_down.space
+      if inputs.keyboard.key_down.space or inputs.mouse.click
         reset_game
-        player.state = :idle
-        player.dx = 0
-        player.points = 0
+        dino.idle
       end
 
       return
     end
 
-    player.x += player.dx
-    player.y += player.dy
-    camera.x -= player.dx
-
-    if player.state == :jumping
-      if player.y >= 270
-        player.dy = -1 # Fall slower at first
-      elsif player.y >= 180 and player.dy < 1
-        player.dy = -6
-      elsif player.y <= 2
-        player.dy = 0
-        player.y = 1
-        player.state = :running
-        player.started_running_at = state.tick_count
-      end
-    else
-      player.dy = 0
-    end
+    dino.move 
+    camera.x -= dino.dx
 
     @rocks.each do |rock|
-      if not rock.already_hit? and rock.hit? feet_box
+      if not rock.already_hit? and rock.hit? dino.feet_box
         rock.hit!
-        player.points += 1
+        dino.points += 1
+        outputs.sounds << 'sounds/bell.wav'
       end
     end
 
     @rocks.delete_if(&:passed?)
 
-    if @rock_count > @rock_limit and player.dy = 0
-      player.state = :done
+    if @rock_count > @rock_limit and dino.dy == 0
+      dino.done
     end
-  end
-
-  def feet_box
-    {
-      x: player.x + camera.x + 120,
-      y: player.y + 30,
-      h: 30,
-      w: 50
-    }
   end
 
   def render
     render_rocks
-
-    case player.state
-    when :idle, :done
-      outputs.sprites << idle_sprite
-    when :jumping
-      outputs.sprites << jumping_sprite
-    else
-      outputs.sprites << running_sprite
-    end
-
-    grass
+    outputs.sprites << dino.sprite
+    outputs.sprites << @grass.render
   end
 
   def render_rocks
     @rocks.each do |rock|
-      rock.render camera
-      outputs.sprites << rock.sprite
+      outputs.sprites << rock.render(camera)
+    end
+  end
+end
+
+class Dino
+  attr_accessor :x, :y, :dx, :dy, :state, :points
+
+  def initialize args
+    @args = args
+
+    @x = 1
+    @y = 1
+    @dx = 0
+    @dy = 0
+    @state = :idle
+    @points = 0
+    @feetbox = { h: 30, w: 50 }
+    @started_running_at = nil
+    @started_jumping_at = nil
+
+    @running_sprite = make_sprite('sprites/dino_run.png')
+    @jumping_sprite = make_sprite('sprites/dino_jump.png')
+    @idle_sprite = make_sprite('sprites/dino_idle.png')
+  end
+
+  def jump
+    @state = :jumping
+    @started_jumping_at = tick_count 
+    @dy = 9
+    @last_column = 0
+  end
+
+  def run
+    @state = :running
+    @dx = 5
+    @started_running_at = tick_count
+  end
+
+  def move
+    @x += @dx
+    @y += @dy
+
+    if @y >= 270
+      @dy = -1 # Fall slower at first
+    elsif @y >= 180 and @dy < 1
+      @dy = -6
+    elsif @y <= 2
+      @dy = 0
+      @y = 1
+
+      if @state == :jumping
+        @state = :running
+        @started_running_at = tick_count
+      end
     end
   end
 
-  def running_sprite
-    column = player.started_running_at.frame_index(8, 6, true)
-
-    dino_sprite(column, 'sprites/dino_run.png')
+  def idle
+    @state = :idle
+    @dx = 0
+    @points = 0
   end
+
+  def done
+    @state = :done
+  end
+
+  def feet_box
+    @feetbox[:x] = @x + camera.x + 120
+    @feetbox[:y] = @y + 30
+    @feetbox
+  end
+
+  def sprite
+    case @state
+    when :idle, :done
+      idle_sprite
+    when :jumping
+      jumping_sprite
+    else
+      running_sprite
+    end
+  end
+
+  private
 
   def idle_sprite
     column = 0.frame_index(9, 8, true)
 
-    dino_sprite(column, 'sprites/dino_idle.png')
+    update_sprite(column, @idle_sprite)
+  end
+
+  def running_sprite
+    column = @started_running_at.frame_index(8, 6, true)
+    update_sprite(column, @running_sprite)
   end
 
   def jumping_sprite
     @last_column ||= 0
 
-    column = player.started_jumping_at.frame_index(9, 8, false)
+    column = @started_jumping_at.frame_index(9, 8, false)
 
     if column.nil? or column < @last_column
       column = 8
@@ -185,85 +215,38 @@ class DinoJump
 
     @last_column = column
 
-    dino_sprite(column, 'sprites/dino_jump.png')
+    update_sprite(column, @jumping_sprite)
   end
 
-  def dino_sprite column, path
+  def make_sprite path
     {
-      x: grid.center_x - 640,
-      y: player.y + 10,
+      x: @args.grid.center_x - 640,
+      y: @y + 10,
       w: 680 / 2,
       h: 472 / 2,
-      tile_x: column * 680,
+      tile_x: 0,
       tile_y: 0,
       tile_w: 680,
       tile_h: 472,
-      path:  path
+      path: path
     }
   end
 
-  def rock_sprite
-    outputs.sprites << {
-      x: 1290 + (camera.x % -1500),
-      y: 10,
-      w: 147,
-      h: 122,
-      path: 'sprites/rock.png'
-    }
+  def update_sprite column, sprite
+    sprite[:tile_x] = column * 680
+    sprite[:y] = @y + 10
+    sprite
   end
 
-  def rock2
-    outputs.sprites << {
-      x: 1290 + (camera.x % -1500),
-      y: 10,
-      w: 250 / 2,
-      h: 200 / 2,
-      path: 'sprites/rock2.png'
-    }
+  def camera
+    @args.state.camera
   end
 
-  def grass
-    width = 769
-
-    x = camera.x % -700
-
-    outputs.sprites << {
-        x: x - 60,
-        y: 0,
-        w: width,
-        h: 90,
-        tile_x: 0,
-        tile_y: 0,
-        tile_w: 769,
-        tile_h: 200,
-        path:  'sprites/grass.png'
-      }
-
-    outputs.sprites << {
-        x: x + 640,
-        y: 0,
-        w: width,
-        h: 90,
-        tile_x: 0,
-        tile_y: 0,
-        tile_w: 769,
-        tile_h: 200,
-        path:  'sprites/grass.png'
-      }
-
-    outputs.sprites << {
-        x: x + 1340,
-        y: 0,
-        w: width,
-        h: 90,
-        tile_x: 0,
-        tile_y: 0,
-        tile_w: 769,
-        tile_h: 200,
-        path:  'sprites/grass.png'
-      }
+  def tick_count
+    @args.state.tick_count
   end
 end
+
 
 class Rock
   def initialize start_x, type = Rocks.keys.sample
@@ -276,6 +259,21 @@ class Rock
     @x = 1290 # Offscreen
     @y = 10
     @last_camera = start_x
+
+    @sprite = {
+      x: @x,
+      y: @y,
+      w: @w,
+      h: @h,
+      path: @path
+    }
+
+    @point_box = {
+      x: @x + (@w / 2),
+      y: @y + @h + 100,
+      h: 200,
+      w: 10
+    }
   end
 
   def passed?
@@ -291,25 +289,18 @@ class Rock
     if @x + @w < 0 # Offscreen
       @passed = true
     end
+
+    update_sprite
   end
 
-  def sprite
-    {
-      x: @x,
-      y: @y,
-      w: @w,
-      h: @h,
-      path: @path
-    }
+  def update_sprite
+    @sprite[:x] = @x
+    @sprite
   end
 
   def point_box
-    {
-      x: @x + (@w / 2),
-      y: @y + @h + 100,
-      h: 200,
-      w: 10
-    }
+    @point_box[:x] = @x + (@w / 2)
+    @point_box
   end
 
   def already_hit?
@@ -351,6 +342,64 @@ class Rock
       path: 'sprites/crystal.png'
     }
   }
+end
+
+class Grass
+  def initialize args
+    @args = args
+
+    x = @args.state.camera.x % -700
+    width = 769
+
+    @grass =[
+      {
+        x: x - 60,
+        y: 0,
+        w: width,
+        h: 90,
+        tile_x: 0,
+        tile_y: 0,
+        tile_w: 769,
+        tile_h: 200,
+        path:  'sprites/grass.png',
+        offset: -60
+      },
+      {
+        x: x + 640,
+        y: 0,
+        w: width,
+        h: 90,
+        tile_x: 0,
+        tile_y: 0,
+        tile_w: 769,
+        tile_h: 200,
+        path:  'sprites/grass.png',
+        offset: 640
+      },
+      {
+        x: x + 1340,
+        y: 0,
+        w: width,
+        h: 90,
+        tile_x: 0,
+        tile_y: 0,
+        tile_w: 769,
+        tile_h: 200,
+        path:  'sprites/grass.png',
+        offset: 1340
+      }
+    ]
+  end
+
+  def render
+    x = @args.state.camera.x % -700
+
+    @grass.each do |grass|
+      grass[:x] = x + grass[:offset]
+    end
+
+    @grass
+  end
 end
 
 
