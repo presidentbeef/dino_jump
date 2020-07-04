@@ -1,5 +1,4 @@
-# Sound effects obtained from https://www.zapsplat.com
-
+# Main game class
 class DinoJump
   attr_gtk
   attr_reader :dino
