@@ -2,5 +2,5 @@ devid=presidentbeef
 devtitle=President Beef
 gameid=dino-jump
 gametitle=Dino Jump
-version=0.2
+version=0.3
 icon=metadata/dino_jump_icon.png
