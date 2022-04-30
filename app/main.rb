@@ -115,9 +115,7 @@ class DinoJump
   end
 
   def render_rocks
-    @rocks.each do |rock|
-      outputs.sprites << rock.render(camera)
-    end
+    outputs.sprites << @rocks.map { |r| r.render(camera) }
   end
 end
 
