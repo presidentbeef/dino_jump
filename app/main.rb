@@ -13,6 +13,7 @@ class DinoJump
     # Background
     outputs.static_solids << [*grid.rect, 46, 188, 192]
     outputs.sounds << 'sounds/audio_hero_Show-And-Tell_SIPML_Q-0149.ogg'
+    outputs.static_sprites << @grass.sprite
     reset_game
   end
 
@@ -110,7 +111,7 @@ class DinoJump
   def render
     render_rocks
     outputs.sprites << dino.sprite
-    outputs.sprites << @grass.render
+    @grass.render
   end
 
   def render_rocks
@@ -417,6 +418,10 @@ class Grass
         offset: 1340
       }
     ]
+  end
+
+  def sprite
+    @grass
   end
 
   def render
