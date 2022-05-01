@@ -243,18 +243,18 @@ class Dino
     {
       x: @args.grid.center_x - 640,
       y: @y + 10,
-      w: 680 / 2,
-      h: 472 / 2,
+      w: 340,
+      h: 236,
       tile_x: 0,
       tile_y: 0,
-      tile_w: 680,
-      tile_h: 472,
+      tile_w: 340,
+      tile_h: 236,
       path: path
     }
   end
 
   def update_sprite column, sprite
-    sprite[:tile_x] = column * 680
+    sprite[:tile_x] = column * 340
     sprite[:y] = @y + 10
     sprite
   end
